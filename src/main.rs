@@ -1,19 +1,15 @@
-mod spaceship;
-mod movements;
+
 mod debug;
 mod cuboid;
 mod camera;
 mod XPDB;
 mod components;
 mod resource;
-mod prepare;
 mod entity;
 
 use bevy::prelude::*;
 use crate::camera::CameraPlugin;
 use crate::cuboid::CuboidPlugin;
-
-use crate::prepare::PreparePlugin;
 
 use crate::XPDB::XPDBPlugin;
 
