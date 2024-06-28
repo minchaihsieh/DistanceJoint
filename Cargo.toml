@@ -1,7 +1,10 @@
 [package]
-name = "untitled"
+name = "DistanceJoint"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 bevy = "0.13.2"
+derive_more = "0.99.18"
+#bevy_xpbd_3d = "0.4"
+

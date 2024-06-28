@@ -1,65 +1,116 @@
 mod spaceship;
+mod movements;
+mod debug;
+mod cuboid;
+mod camera;
+mod XPDB;
+mod components;
+mod resource;
+mod prepare;
+mod entity;
 
 use bevy::prelude::*;
+use crate::camera::CameraPlugin;
+use crate::cuboid::CuboidPlugin;
 
-#[derive(Component, Debug)]
-pub struct Velocity {
-    pub value: Vec3,
-}
+use crate::prepare::PreparePlugin;
 
-pub struct SpaceshipPlugin;
-
-impl Plugin for SpaceshipPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_spaceship);
-    }
-}
-
-pub struct MovementPlugin;
-
-impl Plugin for crate::MovementPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_position);
-    }
-}
-pub struct DebugPlugin;
-
-impl Plugin for crate::DebugPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Update, print_position);
-    }
-}
-
-
+use crate::XPDB::XPDBPlugin;
 
 fn main() {
     App::new()
-        .add_plugins(SpaceshipPlugin)
-        .add_plugins(MovementPlugin)
-        .add_plugins(DebugPlugin)
+        .insert_resource(ClearColor(Color::default()))
+        // .insert_resource(AmbientLight {
+        //     color: Color::default(),
+        //     brightness: 0.75,
+        // })
         .add_plugins(DefaultPlugins)
+        //.add_plugins(SpaceshipPlugin)
+        //.add_plugins(MovementPlugin)
+        //.add_plugins(DebugPlugin)
+        .add_plugins(CameraPlugin)
+        .add_plugins(CuboidPlugin)
+        .add_plugins(XPDBPlugin)
         .run();
 }
+//
+// use bevy::prelude::*;
+// use bevy_xpbd_3d::{math::*, prelude::*};
+// use crate::components::RigidBody;
+// fn main() {
+//     App::new()
+//         .add_plugins((
+//             DefaultPlugins,
+//             PhysicsPlugins::default(),
+//             PhysicsDebugPlugin::default(),
+//         ))
+//         .register_type::<RigidBody>()
+//         .add_plugins(CuboidPlugin)
+//         .add_systems(Startup, setup)
+//         .run();
+// }
+//
+// fn setup(
+//     mut commands: Commands,
+//     mut meshes: ResMut<Assets<Mesh>>,
+//     mut materials: ResMut<Assets<StandardMaterial>>,
+// ) {
+//     let cube_mesh = meshes.add(Cuboid::default());
+//     let cube_material = materials.add(Color::rgb(0.8, 0.7, 0.6));
+//
+//     // Spawn a static cube and a dynamic cube that is connected to it by a distance joint.
+//     // let static_cube = commands
+//     //     .spawn((
+//     //         PbrBundle {
+//     //             mesh: cube_mesh.clone(),
+//     //             material: cube_material.clone(),
+//     //             ..default()
+//     //         },
+//     //         RigidBody::Static,
+//     //         Collider::cuboid(1., 1., 1.),
+//     //     ))
+//     //     .id();
+//     // let dynamic_cube = commands
+//     //     .spawn((
+//     //         PbrBundle {
+//     //             mesh: cube_mesh,
+//     //             material: cube_material,
+//     //             transform: Transform::from_xyz(-2.0, -0.5, 0.0),
+//     //             ..default()
+//     //         },
+//     //         RigidBody::Dynamic,
+//     //         Collider::cuboid(1., 1., 1.),
+//     //         MassPropertiesBundle::new_computed(&Collider::cuboid(1.0, 1.0, 1.0), 1.0),
+//     //     ))
+//     //     .id();
+//     //
+//     // // Add a distance joint to keep the cubes at a certain distance from each other.
+//     // commands.spawn(
+//     //     DistanceJoint::new(static_cube, dynamic_cube)
+//     //         .with_local_anchor_2(0.5 * Vector::ONE)
+//     //         .with_rest_length(1.5)
+//     //         .with_compliance(1.0 / 400.0),
+//     // );
+//
+//     // Light
+//     commands.spawn(PointLightBundle {
+//         point_light: PointLight {
+//             intensity: 2_000_000.0,
+//             shadows_enabled: true,
+//             ..default()
+//         },
+//         transform: Transform::from_xyz(4.0, 8.0, 4.0),
+//         ..default()
+//     });
+//
+//     // Camera
+//     commands.spawn(Camera3dBundle {
+//         transform: Transform::from_xyz(0.0, 0.0, 10.0).looking_at(Vec3::ZERO, Vec3::Y),
+//         ..default()
+//     });
+// }
 
-fn spawn_spaceship(mut commands: Commands) {
-    commands.spawn((
-        SpatialBundle::default(),
-        Velocity {
-            value: Vec3::new(0., 0., 0.)
-        },
-    ));
-}
 
-fn update_position(mut query: Query<(&Velocity, &mut Transform)>) {
-    for (velocity, mut transform) in query.iter_mut() {
-        transform.translation.x += velocity.value.x;
-        transform.translation.y += velocity.value.y;
-        transform.translation.z += velocity.value.z;
-    }
-}
 
-fn print_position(mut query: Query<(Entity, &Transform)>) {
-    for (entity, transform) in query.iter_mut() {
-        info!("Entity {:?} is at position {:?}", entity, transform.translation);
-    }
-}
+
+
