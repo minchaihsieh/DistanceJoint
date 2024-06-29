@@ -6,29 +6,40 @@ mod XPDB;
 mod components;
 mod resource;
 mod entity;
+mod DistanceJoint;
 
 use bevy::prelude::*;
 use crate::camera::CameraPlugin;
 use crate::cuboid::CuboidPlugin;
-
+use crate::resource::*;
 use crate::XPDB::XPDBPlugin;
 
 fn main() {
     App::new()
+
         .insert_resource(ClearColor(Color::default()))
         // .insert_resource(AmbientLight {
         //     color: Color::default(),
         //     brightness: 0.75,
         // })
         .add_plugins(DefaultPlugins)
-        //.add_plugins(SpaceshipPlugin)
-        //.add_plugins(MovementPlugin)
         //.add_plugins(DebugPlugin)
         .add_plugins(CameraPlugin)
         .add_plugins(CuboidPlugin)
         .add_plugins(XPDBPlugin)
+        //.insert_resource(Gravity(Vec3::ZERO))
         .run();
 }
+
+#[derive(SystemSet, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Step {
+    CollectCollisionPairs,
+    Integrate,
+    SolvePositions,
+    UpdateVelocities,
+    SolveVelocities,
+}
+
 //
 // use bevy::prelude::*;
 // use bevy_xpbd_3d::{math::*, prelude::*};

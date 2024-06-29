@@ -8,14 +8,18 @@ pub struct ParticleBundle {
     pub pos: Position,
     pub prev_pos: PreviousPosition,
     pub mass: Mass,
+    pub lin_vel: LinearVelocity,
+    pub rigid_body: RigidBody,
 }
 
 impl ParticleBundle {
-    pub fn new_with_pos_and_vel(pos: Vec3, vel: Vec3) -> Self {
-
+    pub fn new_with_pos_and_vel(pos: Vec3, vel: Vec3, rigid_body: RigidBody) -> Self {
+        //let delta_time = time.delta_seconds_adjusted();
         Self {
             pos: Position(pos),
             prev_pos: PreviousPosition(pos - vel * DELTA_TIME),
+            lin_vel: LinearVelocity(vel),
+            rigid_body,
             ..Default::default()
         }
     }
