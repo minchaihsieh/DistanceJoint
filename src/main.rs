@@ -7,6 +7,7 @@ mod components;
 mod resource;
 mod entity;
 mod DistanceJoint;
+mod rotation;
 
 use bevy::prelude::*;
 use crate::camera::CameraPlugin;
