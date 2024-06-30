@@ -2,6 +2,7 @@ use bevy::prelude::*;
 use crate::components::*;
 use crate::resource::*;
 use crate::DistanceJoint::*;
+use crate::rotation::{PreviousRotation, Rotation};
 use crate::Step;
 
 pub struct XPDBPlugin;
@@ -11,6 +12,7 @@ impl Plugin for XPDBPlugin {
         app.init_resource::<Gravity>();
         app.add_systems(Update, collect_collision_pair.in_set(Step::CollectCollisionPairs).before(Step::Integrate));
         app.add_systems(Update, integrate_pos.in_set(Step::Integrate));
+        app.add_systems(Update, integrate_rot.in_set(Step::Integrate));
         app.add_systems(Update, solve_pos.in_set(Step::SolvePositions).after(Step::Integrate));
         app.add_systems(Update, update_lin_vel.in_set(Step::UpdateVelocities).after(Step::SolvePositions));
         app.add_systems(Update, solve_lin_vel.in_set(Step::SolveVelocities).after(Step::UpdateVelocities));
@@ -51,6 +53,23 @@ fn integrate_pos(mut query: Query<(&mut Position, &mut PreviousPosition, &mut Li
         pos.0 += lin_vel.0 * DELTA_TIME;
     }
 }
+
+fn integrate_rot(mut query: Query<(&mut Rotation, &mut PreviousRotation, &mut AngularVelocity)>) {
+    for (mut rot, mut prev_rot, mut ang_vel) in query.iter_mut() {
+        prev_rot.0 = *rot;
+        let q = Quat::from_vec4(ang_vel.0.extend(0.0)) * rot.0;
+        let effective_dq = DELTA_TIME * 0.5 * q.xyz()
+            .extend(DELTA_TIME * 0.5 * q.w);
+        // avoid triggering bevy's change detection unnecessarily
+        let delta = Quat::from_vec4(effective_dq);
+        if delta != Quat::from_xyzw(0.0, 0.0, 0.0, 0.0) {
+            rot.0 = (rot.0 + delta).normalize();
+        }
+        println!("rot {}, delta{}", rot.0, delta);
+    }
+}
+
+
 fn solve_pos(mut query: Query<(&mut DistanceJoint)>,
 mut bodies: Query<(&mut Position, &mut PreviousPosition, &mut LinearVelocity, &Mass, &RigidBody)>) {
     for(mut joint) in query.iter_mut(){
@@ -72,19 +91,6 @@ mut bodies: Query<(&mut Position, &mut PreviousPosition, &mut LinearVelocity, &M
         }
 
     }
-    // let mut iter = query.iter_combinations_mut();
-    // while let Some([(mut pos_a, circle_a), (mut pos_b, circle_b)]) =
-    //     iter.fetch_next()
-    // {
-    //     let ab = pos_b.0 - pos_a.0;
-    //     let combined_radius = circle_a.radius + circle_b.radius;
-    //     if ab.length_squared() < combined_radius * combined_radius {
-    //         let penetration_depth = combined_radius - ab.length();
-    //         let n = ab.normalize();
-    //         pos_a.0 -= n * penetration_depth * 0.5;
-    //         pos_b.0 += n * penetration_depth * 0.5;
-    //     }
-    // }
 }
 // TODO: SolvePositions
 fn update_lin_vel(mut query: Query<(&Position, &PreviousPosition, &mut LinearVelocity, &RigidBody)>, time: Res<Time>) {
@@ -110,9 +116,10 @@ type PosToTransformComponents = (
 
 type PosToTransformFilter = (With<RigidBody>, Changed<Position>);
 
-pub fn position_to_transform(mut query: Query<(&mut Transform, &Position)>) {
-    for (mut transform, pos) in query.iter_mut() {
+pub fn position_to_transform(mut query: Query<(&mut Transform, &Position, &Rotation)>) {
+    for (mut transform, pos, rot) in query.iter_mut() {
         transform.translation = pos.0;
+        transform.rotation = rot.0;
     }
 }
 

@@ -22,10 +22,11 @@ fn spawn_cuboid(mut commands: Commands,
             ..default()
         },
         )
-    ).insert(ParticleBundle::new_with_pos_and_vel(
+    ).insert(ParticleBundle::new_with_ang_vel_and_vel_and_pos(
         Vec3::new(2.0, 2.0, 0.0),
         Vec3::new(0., 0., 0.),
-        RigidBody::Dynamic)).id();
+        Vec3::Z * 1.5,
+        RigidBody::Dynamic), ).id();
 
     let Static = commands.spawn((
         PbrBundle {
