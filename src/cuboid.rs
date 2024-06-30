@@ -18,12 +18,12 @@ fn spawn_cuboid(mut commands: Commands,
         PbrBundle {
             mesh: meshes.add(Cuboid::default()),
             material: materials.add(Color::SILVER),
-            transform: Transform::from_xyz(1.0, 1.0, 1.0),
+            transform: Transform::from_xyz(2.0, 2.0, 0.0),
             ..default()
         },
         )
     ).insert(ParticleBundle::new_with_pos_and_vel(
-        Vec3::new(1.0, 1.0, 1.0),
+        Vec3::new(2.0, 2.0, 0.0),
         Vec3::new(0., 0., 0.),
         RigidBody::Dynamic)).id();
 
