@@ -27,7 +27,7 @@ pub struct RigidBodyQuery {
     //pub friction: &'static Friction,
     //pub restitution: &'static Restitution,
     //pub locked_axes: Option<&'static LockedAxes>,
-    //pub dominance: Option<&'static Dominance>,
+    pub dominance: Option<&'static Dominance>,
 }
 
 impl<'w> RigidBodyQueryItem<'w> {

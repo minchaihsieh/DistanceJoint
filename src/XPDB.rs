@@ -92,44 +92,47 @@ fn solve_pos(mut query: Query<(&mut DistanceJoint)>,
             time: Res<Time>) {
     for (mut joint) in query.iter_mut() {
         let delta_secs = time.delta_seconds_adjusted();
-        if let Ok([mut body1, mut body2]) = bodies.get_many_mut(joint.entities()) {
+        if let Ok(mut bodies) = bodies.get_many_mut(joint.entities()) {
+            if let Ok(mut bodies) = bodies
+                .iter_mut()
+                .collect::<Vec<&mut RigidBodyQueryItem>>()
+                .try_into() {
+                let [body1, body2] = bodies;
+                let world_r1 = body1.rotation.rotate(joint.local_anchor1);
+                let world_r2 = body2.rotation.rotate(joint.local_anchor2);
+                let pos_offset = (body1.current_position() + world_r1) - (body2.current_position() + world_r2);
+                let distance = pos_offset.length();
 
-            let world_r1 = body1.rotation.rotate(joint.local_anchor1);
-            let world_r2 = body2.rotation.rotate(joint.local_anchor2);
-            let pos_offset = (body1.current_position() + world_r1) - (body2.current_position() + world_r2);
-            let distance = pos_offset.length();
+                let (dir, distance) = (-pos_offset / distance, (distance - joint.rest_length));
+                if distance.abs() < f32::EPSILON {
+                    continue;
+                }
 
-            let (dir, distance) = (-pos_offset / distance, (distance - joint.rest_length));
-            if distance.abs() < f32::EPSILON {
-                continue;
+                let w1 = compute_generalized_inverse_mass(body1, world_r1, dir);
+                let w2 = compute_generalized_inverse_mass(body2, world_r2, dir);
+                let w = [w1, w2];
+
+                // Constraint gradients, i.e. how the bodies should be moved
+                // relative to each other in order to satisfy the constraint
+                let gradients = [dir, -dir];
+
+                // Compute Lagrange multiplier update, essentially the signed magnitude of the correction
+                let delta_lagrange = joint.compute_lagrange_update(
+                    joint.lagrange,
+                    distance,
+                    &gradients,
+                    &w,
+                    joint.compliance,
+                    delta_secs,
+                );
+                joint.lagrange += delta_lagrange;
+
+                // Apply positional correction (method from PositionConstraint)
+                joint.apply_positional_correction(body1, body2, delta_lagrange, dir, world_r1, world_r2);
+
+                // Return constraint force
+                joint.compute_force(joint.lagrange, dir, delta_secs);
             }
-
-            let w1 = compute_generalized_inverse_mass(body1.clone(), world_r1, dir);
-            let w2 = compute_generalized_inverse_mass(body2.clone(), world_r2, dir);
-            let w = [w1, w2];
-
-            // Constraint gradients, i.e. how the bodies should be moved
-            // relative to each other in order to satisfy the constraint
-            let gradients = [dir, -dir];
-
-            // Compute Lagrange multiplier update, essentially the signed magnitude of the correction
-            let delta_lagrange = joint.compute_lagrange_update(
-                joint.lagrange,
-                distance,
-                &gradients,
-                &w,
-                joint.compliance,
-                delta_secs,
-            );
-            joint.lagrange += delta_lagrange;
-
-            // Apply positional correction (method from PositionConstraint)
-            joint.apply_positional_correction(body1, body2, delta_lagrange, dir, world_r1, world_r2);
-
-            // Return constraint force
-            joint.compute_force(joint.lagrange, dir, delta_secs)
-
-
             // 使用质心位置会有问题！
             // let mass1 = body1.3.0;
             // let mass2 = body2.3.0;

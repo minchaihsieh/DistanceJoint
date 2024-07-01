@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use bevy::reflect::erased_serde::__private::serde;
 use crate::query::*;
+use crate::rotation::*;
 
 #[derive(Component, Clone, Copy, Debug, PartialEq, Reflect)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
@@ -129,7 +130,10 @@ impl DistanceJoint {
 
         (-c - tilde_compliance * lagrange) / (w_sum + tilde_compliance)
     }
-
+    fn get_delta_rot(rot: Rotation, inverse_inertia: Mat3, r: Vec3, p: Vec3) -> Rotation {
+        // Equation 8/9
+        Rotation(Quat::from_vec4(0.5 * (inverse_inertia * r.cross(p)).extend(0.0)) * rot.0)
+    }
     pub fn apply_positional_correction(
         &self,
         body1: &mut RigidBodyQueryItem,
@@ -194,5 +198,8 @@ impl DistanceJoint {
             rest_length,
             ..self
         }
+    }
+    pub fn compute_force(&self, lagrange: f32, direction: Vec3, dt: f32) -> Vec3 {
+        lagrange * direction / dt.powi(2)
     }
 }
