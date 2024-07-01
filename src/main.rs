@@ -8,6 +8,8 @@ mod resource;
 mod entity;
 mod DistanceJoint;
 mod rotation;
+mod query;
+mod utils;
 
 use bevy::prelude::*;
 use crate::camera::CameraPlugin;

@@ -2,21 +2,9 @@
 use bevy::prelude::*;
 use bevy::reflect::erased_serde::__private::serde;
 use derive_more::From;
+use crate::rotation::*;
+use crate::utils::*;
 
-
-type PosIntegrationComponents = (
-    &'static RigidBody,
-    &'static Position,
-    &'static mut PreviousPosition,
-    &'static mut AccumulatedTranslation,
-    &'static mut LinearVelocity,
-    //Option<&'static LinearDamping>,
-    //Option<&'static GravityScale>,
-    //&'static ExternalForce,
-    &'static Mass,
-    &'static InverseMass,
-    //Option<&'static LockedAxes>,
-);
 
 
 #[derive(Reflect, Clone, Copy, Component, Debug, Default, PartialEq, Eq)]
@@ -71,6 +59,11 @@ impl AngularVelocity {
     pub const ZERO: AngularVelocity = AngularVelocity(Vec3::ZERO);
 }
 
+#[derive(Reflect, Clone, Copy, Component, Debug, Default, Deref, DerefMut, PartialEq, From)]
+#[reflect(Component)]
+pub(crate) struct PreSolveAngularVelocity(pub Vec3);
+
+
 #[derive(Reflect, Clone, Copy, Component, Debug, Deref, DerefMut, PartialEq)]
 #[reflect(Component)]
 pub struct Mass(pub f32);
@@ -87,6 +80,98 @@ pub struct InverseMass(pub f32);
 impl InverseMass {
     pub const ZERO: Self = Self(0.0);
 }
+
+#[derive(Reflect, Clone, Copy, Component, Debug, Deref, DerefMut, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[reflect(Component)]
+pub struct Inertia(pub Mat3);
+impl Default for Inertia {
+    fn default() -> Self {
+        Self(Mat3::ZERO)
+    }
+}
+
+impl Inertia {
+    /// Zero angular inertia.
+    pub const ZERO: Self = Self(Mat3::ZERO);
+
+
+    pub fn rotated(&self, rot: &Rotation) -> Self {
+        Self(get_rotated_inertia_tensor(self.0, rot.0))
+    }
+
+
+    /// Returns the inverted moment of inertia.
+
+    pub fn inverse(&self) -> InverseInertia {
+        InverseInertia(self.0.inverse())
+    }
+
+
+    /// Computes the inertia of a body with the given mass, shifted by the given offset.
+
+    pub fn shifted(&self, mass: f32, offset: Vec3) -> Mat3 {
+        if mass > 0.0 && mass.is_finite() {
+            let diag = offset.length_squared();
+            let diagm = Mat3::from_diagonal(Vec3::splat(diag));
+            let offset_outer_product =
+                Mat3::from_cols(offset * offset.x, offset * offset.y, offset * offset.z);
+            self.0 + (diagm + offset_outer_product) * mass
+        } else {
+            self.0
+        }
+    }
+}
+
+#[derive(Reflect, Clone, Copy, Component, Debug, Deref, DerefMut, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[reflect(Component)]
+pub struct InverseInertia(pub Mat3);
+
+impl Default for InverseInertia {
+    fn default() -> Self {
+        InverseInertia(Mat3::ZERO)
+    }
+}
+
+
+impl InverseInertia {
+    /// Zero inverse angular inertia.
+
+    pub const ZERO: Self = Self(Mat3::ZERO);
+
+
+    /// Returns the inertia tensor's world-space version that takes the body's orientation into account.
+
+    pub fn rotated(&self, rot: &Rotation) -> Self {
+        Self(get_rotated_inertia_tensor(self.0, rot.0))
+    }
+
+    /// Returns the original moment of inertia.
+
+    pub fn inverse(&self) -> Inertia {
+        Inertia(self.0.inverse())
+    }
+}
+
+impl From<Inertia> for InverseInertia {
+    fn from(inertia: Inertia) -> Self {
+        inertia.inverse()
+    }
+}
+
+
+
+#[derive(Reflect, Clone, Copy, Component, Debug, Default, Deref, DerefMut, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+#[reflect(Component)]
+pub struct CenterOfMass(pub Vec3);
+
+impl CenterOfMass {
+    /// A center of mass set at the local origin.
+    pub const ZERO: Self = Self(Vec3::ZERO);
+}
+
 
 pub(crate) trait TimePrecisionAdjusted {
     /// Returns how much time has advanced since the last update

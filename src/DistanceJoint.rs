@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use bevy::reflect::erased_serde::__private::serde;
+use crate::query::*;
 
 #[derive(Component, Clone, Copy, Debug, PartialEq, Reflect)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
@@ -93,61 +94,91 @@ impl DistanceJoint {
     pub fn damping_angular(&self) -> f32 {
         self.damping_angular
     }
+    fn clear_lagrange_multipliers(&mut self) {
+        self.lagrange = 0.0;
+    }
+
 
 
 
     /// Constrains the distance the bodies with no constraint on their rotation.
     ///
     /// Returns the force exerted by this constraint.
-    // fn constrain_length(&mut self, bodies: [&mut RigidBodyQueryItem; 2], dt: Scalar) -> Vector {
-    //     let [body1, body2] = bodies;
-    //     let world_r1 = body1.rotation.rotate(self.local_anchor1);
-    //     let world_r2 = body2.rotation.rotate(self.local_anchor2);
-    //
-    //     // If min and max limits aren't specified, use rest length
-    //     // TODO: Remove rest length, just use min/max limits.
-    //     let limits = self
-    //         .length_limits
-    //         .unwrap_or(DistanceLimit::new(self.rest_length, self.rest_length));
-    //
-    //     // Compute the direction and magnitude of the positional correction required
-    //     // to keep the bodies within a certain distance from each other.
-    //     let (dir, distance) = limits.compute_correction(
-    //         body1.current_position() + world_r1,
-    //         body2.current_position() + world_r2,
-    //     );
-    //
-    //     // Avoid division by zero and unnecessary computation
-    //     if distance.abs() < Scalar::EPSILON {
-    //         return Vector::ZERO;
-    //     }
-    //
-    //     // Compute generalized inverse masses (method from PositionConstraint)
-    //     let w1 = PositionConstraint::compute_generalized_inverse_mass(self, body1, world_r1, dir);
-    //     let w2 = PositionConstraint::compute_generalized_inverse_mass(self, body2, world_r2, dir);
-    //     let w = [w1, w2];
-    //
-    //     // Constraint gradients, i.e. how the bodies should be moved
-    //     // relative to each other in order to satisfy the constraint
-    //     let gradients = [dir, -dir];
-    //
-    //     // Compute Lagrange multiplier update, essentially the signed magnitude of the correction
-    //     let delta_lagrange = self.compute_lagrange_update(
-    //         self.lagrange,
-    //         distance,
-    //         &gradients,
-    //         &w,
-    //         self.compliance,
-    //         dt,
-    //     );
-    //     self.lagrange += delta_lagrange;
-    //
-    //     // Apply positional correction (method from PositionConstraint)
-    //     self.apply_positional_correction(body1, body2, delta_lagrange, dir, world_r1, world_r2);
-    //
-    //     // Return constraint force
-    //     self.compute_force(self.lagrange, dir, dt)
-    // }
+    pub fn compute_lagrange_update(
+        &self,
+        lagrange: f32,
+        c: f32,
+        gradients: &[Vec3],
+        inverse_masses: &[f32],
+        compliance: f32,
+        dt: f32,
+    ) -> f32 {
+        // Compute the sum of all inverse masses multiplied by the squared lengths of the corresponding gradients.
+        let w_sum = inverse_masses
+            .iter()
+            .enumerate()
+            .fold(0.0, |acc, (i, w)| acc + *w * gradients[i].length_squared());
+
+        // Avoid division by zero
+        if w_sum <= f32::EPSILON {
+            return 0.0;
+        }
+
+        // tilde_a = a/h^2
+        let tilde_compliance = compliance / dt.powi(2);
+
+        (-c - tilde_compliance * lagrange) / (w_sum + tilde_compliance)
+    }
+
+    pub fn apply_positional_correction(
+        &self,
+        body1: &mut RigidBodyQueryItem,
+        body2: &mut RigidBodyQueryItem,
+        delta_lagrange: f32,
+        direction: Vec3,
+        r1: Vec3,
+        r2: Vec3,
+    ) -> Vec3 {
+        if delta_lagrange.abs() <= f32::EPSILON {
+            return Vec3::ZERO;
+        }
+
+        // Compute positional impulse
+        let p = delta_lagrange * direction;
+        let rot1 = *body1.rotation;
+        let rot2 = *body2.rotation;
+
+        let inv_mass1 = body1.effective_inv_mass();
+        let inv_mass2 = body2.effective_inv_mass();
+        let inv_inertia1 = body1.effective_world_inv_inertia();
+        let inv_inertia2 = body2.effective_world_inv_inertia();
+
+        // Apply positional and rotational updates
+        if body1.rb.is_dynamic() && body1.dominance() <= body2.dominance() {
+            body1.accumulated_translation.0 += p * inv_mass1;
+            *body1.rotation += Self::get_delta_rot(rot1, inv_inertia1, r1, p);
+
+
+            {
+                // In 3D, subtracting quaternions like above can result in unnormalized rotations,
+                // which causes stability issues (see #235) and panics when trying to rotate unit vectors.
+                // TODO: It would be nice to avoid normalization if possible.
+                //       Maybe the math above can be done in a way that keeps rotations normalized?
+                body1.rotation.0 = body1.rotation.0.normalize();
+            }
+        }
+        if body2.rb.is_dynamic() && body2.dominance() <= body1.dominance() {
+            body2.accumulated_translation.0 -= p * inv_mass2;
+            *body2.rotation -= Self::get_delta_rot(rot2, inv_inertia2, r2, p);
+
+            {
+                // See comments for `body1` above.
+                body2.rotation.0 = body2.rotation.0.normalize();
+            }
+        }
+
+        p
+    }
 
     /// Sets the minimum and maximum distances between the attached bodies.
     // pub fn with_limits(self, min: f32, max: f32) -> Self {
