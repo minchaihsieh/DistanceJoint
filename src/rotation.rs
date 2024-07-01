@@ -24,10 +24,18 @@ impl Rotation {
     pub fn rotate(&self, vec: Vec3) -> Vec3 {
         self.0 * vec
     }
+    pub fn rotate_quat(&mut self, rotation: Quat) {
 
+        self.0 = self.0 * rotation;
+        // print!("rot {}, delta{}", self.0, rotation);
+    }
     /// Inverts the rotation.
     pub fn inverse(&self) -> Self {
         Self(self.0.inverse())
+    }
+
+    pub fn rotate_axis(&mut self, axis: Vec3, angle: f32) {
+        self.rotate_quat(Quat::from_axis_angle(axis, angle));
     }
 }
 
@@ -58,11 +66,27 @@ impl SubAssign<Self> for Rotation {
     }
 }
 
+impl core::ops::Mul<Direction3d> for Rotation {
+    type Output = Direction3d;
+
+    fn mul(self, direction: Direction3d) -> Self::Output {
+        Direction3d::new_unchecked(self.rotate(*direction))
+    }
+}
+
 impl core::ops::Mul<Vec3> for Rotation {
     type Output = Vec3;
 
     fn mul(self, vector: Vec3) -> Self::Output {
         self.rotate(vector)
+    }
+}
+
+impl core::ops::Mul<Direction3d> for &Rotation {
+    type Output = Direction3d;
+
+    fn mul(self, direction: Direction3d) -> Self::Output {
+        Direction3d::new_unchecked(self.rotate(*direction))
     }
 }
 
