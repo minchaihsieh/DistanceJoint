@@ -3,6 +3,7 @@ use crate::components::*;
 pub struct CuboidPlugin;
 use crate::entity::*;
 use crate::DistanceJoint::*;
+use crate::resource::Gravity;
 
 impl Plugin for CuboidPlugin {
     fn build(&self, app: &mut App) {
@@ -18,15 +19,15 @@ fn spawn_cuboid(mut commands: Commands,
         PbrBundle {
             mesh: meshes.add(Cuboid::default()),
             material: materials.add(Color::SILVER),
-            transform: Transform::from_xyz(1.0, 1.0, 1.0),
+            transform: Transform::from_xyz(-2.0, -0.5, 0.0),
             ..default()
         },
         )
     ).insert(ParticleBundle::new_with_ang_vel_and_vel_and_pos(
-        Vec3::new(1.0, 1.0, 1.0),
+        Vec3::new(-2.0, -0.5, 0.0),
         Vec3::new(0., 0., 0.),
-        Vec3::Z * 1.5,
-        RigidBody::Dynamic), ).id();
+        Vec3::new(0.0 ,0.0, 0.0),
+        RigidBody::Dynamic),).id();
 
     let Static = commands.spawn((
         PbrBundle {

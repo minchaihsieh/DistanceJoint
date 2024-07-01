@@ -50,9 +50,12 @@ impl LinearVelocity {
 }
 
 #[derive(Reflect, Clone, Copy, Component, Debug, Default, Deref, DerefMut, PartialEq, From)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 #[reflect(Component)]
 pub struct AngularVelocity(pub Vec3);
+
+#[derive(Reflect, Clone, Copy, Component, Debug, Default, Deref, DerefMut, PartialEq, From)]
+#[reflect(Component)]
+pub(crate) struct PreSolveAngularVelocity(pub Vec3);
 
 impl AngularVelocity {
     /// Zero angular velocity.
