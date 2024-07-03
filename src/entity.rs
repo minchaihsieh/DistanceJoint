@@ -24,14 +24,12 @@ pub struct ParticleBundle {
 
 impl ParticleBundle {
     pub fn new_with_ang_vel_and_vel_and_pos (pos: Vec3, vel: Vec3, ang_vel: Vec3, mass: f32, rigid_body: RigidBody) -> Self {
-        //let delta_time = time.delta_seconds_adjusted();
         Self {
             ang_vel: AngularVelocity(ang_vel),
             ..Self::new_with_pos_and_vel(pos, vel, mass, rigid_body)
         }
     }
     pub fn new_with_pos_and_vel(pos: Vec3, vel: Vec3, mass: f32, rigid_body: RigidBody) -> Self {
-        //let delta_time = time.delta_seconds_adjusted();
         Self {
             pos: Position(pos),
             prev_pos: PreviousPosition(pos),

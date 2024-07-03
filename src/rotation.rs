@@ -26,7 +26,6 @@ impl Rotation {
     pub fn rotate_quat(&mut self, rotation: Quat) {
 
         self.0 = self.0 * rotation;
-        // print!("rot {}, delta{}", self.0, rotation);
     }
     /// Inverts the rotation.
     pub fn inverse(&self) -> Self {
