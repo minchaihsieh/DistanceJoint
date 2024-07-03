@@ -3,7 +3,6 @@ use crate::components::*;
 pub struct CuboidPlugin;
 use crate::entity::*;
 use crate::DistanceJoint::*;
-use crate::resource::Gravity;
 
 impl Plugin for CuboidPlugin {
     fn build(&self, app: &mut App) {
@@ -18,7 +17,7 @@ fn spawn_cuboid(mut commands: Commands,
     let dynamic_cub = commands.spawn((
         PbrBundle {
             mesh: meshes.add(Cuboid::default()),
-            material: materials.add(Color::SILVER),
+            material: materials.add(Color::rgb(0.8, 0.7, 0.6)),
             transform: Transform::from_xyz(-2.0, -0.5, 0.0),
             ..default()
         },
@@ -50,5 +49,14 @@ fn spawn_cuboid(mut commands: Commands,
             .with_rest_length(1.5)
             .with_compliance(1.0 / 400.0),
     );
+    commands.spawn(PointLightBundle {
+        point_light: PointLight {
+            intensity: 2_000_000.0,
+            shadows_enabled: true,
+            ..default()
+        },
+        transform: Transform::from_xyz(4.0, 8.0, 4.0),
+        ..default()
+    });
 
 }

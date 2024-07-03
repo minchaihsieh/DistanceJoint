@@ -1,10 +1,7 @@
-
 use bevy::prelude::*;
-use bevy::reflect::erased_serde::__private::serde;
 use derive_more::From;
 use crate::rotation::*;
 use crate::utils::*;
-
 
 
 #[derive(Reflect, Clone, Copy, Component, Debug, Default, PartialEq, Eq)]
@@ -17,8 +14,8 @@ pub enum RigidBody {
 }
 
 impl RigidBody {
-    pub fn is_dynamic(&self) -> bool { *self == Self::Dynamic}
-    pub fn is_static(&self) -> bool { *self == Self::Static}
+    pub fn is_dynamic(&self) -> bool { *self == Self::Dynamic }
+    pub fn is_static(&self) -> bool { *self == Self::Static }
 }
 
 #[derive(Reflect, Clone, Copy, Component, Debug, Default, Deref, DerefMut, PartialEq, From)]
@@ -29,7 +26,7 @@ pub struct Position(pub Vec3);
 impl Position {
     pub fn new(position: Vec3) -> Self { Self(position) }
 
-    pub fn from_xyz(x: f32, y: f32, z: f32) ->Self { Self(Vec3::new(x, y, z))}
+    pub fn from_xyz(x: f32, y: f32, z: f32) -> Self { Self(Vec3::new(x, y, z)) }
 }
 
 
@@ -77,7 +74,6 @@ pub struct InverseMass(pub f32);
 
 impl InverseMass {
     pub const ZERO: Self = Self(0.0);
-
 }
 
 #[derive(Reflect, Clone, Copy, Component, Debug, Deref, DerefMut, PartialEq)]
@@ -94,6 +90,12 @@ impl Inertia {
     /// Zero angular inertia.
     pub const ZERO: Self = Self(Mat3::ZERO);
 
+    pub fn new(vec: Vec3, mass: f32) -> Self {
+        let a = Vec3::new((vec.y * vec.y + vec.z * vec.z) * mass * 1.0 / 12.0, 0.0, 0.0);
+        let b = Vec3::new(0.0, (vec.x * vec.x + vec.z * vec.z) * mass * 1.0 / 12.0, 0.0);
+        let c = Vec3::new(0.0, 0.0, (vec.y * vec.y + vec.z * vec.z) * mass * 1.0 / 12.0);
+        Self(Mat3::from_cols(a, b, c))
+    }
 
     pub fn rotated(&self, rot: &Rotation) -> Self {
         Self(get_rotated_inertia_tensor(self.0, rot.0))
@@ -139,7 +141,12 @@ impl InverseInertia {
 
     pub const ZERO: Self = Self(Mat3::ZERO);
 
-
+    pub fn new(vec: Vec3, mass: f32) -> Self {
+        let a = Vec3::new(12.0 / (vec.y * vec.y + vec.z * vec.z) * mass * 1.0 , 0.0, 0.0);
+        let b = Vec3::new(0.0, 12.0 / (vec.x * vec.x + vec.z * vec.z) * mass * 1.0 , 0.0);
+        let c = Vec3::new(0.0, 0.0, 12.0 / (vec.y * vec.y + vec.z * vec.z) * mass * 1.0 );
+        Self(Mat3::from_cols(a, b, c))
+    }
     /// Returns the inertia tensor's world-space version that takes the body's orientation into account.
 
     pub fn rotated(&self, rot: &Rotation) -> Self {
@@ -160,7 +167,6 @@ impl From<Inertia> for InverseInertia {
 }
 
 
-
 #[derive(Reflect, Clone, Copy, Component, Debug, Default, Deref, DerefMut, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 #[reflect(Component)]
@@ -174,7 +180,21 @@ impl CenterOfMass {
 }
 
 #[rustfmt::skip]
-#[derive(Component, Reflect, Debug, Clone, Copy, Default, Deref, DerefMut, From, PartialEq, PartialOrd, Eq, Ord)]
+#[derive(
+    Component,
+    Reflect,
+    Debug,
+    Clone,
+    Copy,
+    Default,
+    Deref,
+    DerefMut,
+    From,
+    PartialEq,
+    PartialOrd,
+    Eq,
+    Ord
+)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 #[reflect(Component)]
 pub struct Dominance(pub i8);

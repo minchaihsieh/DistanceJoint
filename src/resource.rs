@@ -2,7 +2,6 @@
 use bevy::ecs::reflect::ReflectResource;
 use bevy::math::Vec3;
 use bevy::prelude::{Reflect, Resource};
-use bevy::reflect::erased_serde::__private::serde;
 
 
 #[derive(Reflect, Resource, Debug)]

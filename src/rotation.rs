@@ -2,10 +2,9 @@
 
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
-use bevy::{math::DQuat, prelude::*};
+use bevy::prelude::*;
 
 
-pub(crate) type RotationValue = Quat;
 #[derive(Reflect, Clone, Copy, Component, Debug, Default, Deref, DerefMut, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 #[reflect(Component)]

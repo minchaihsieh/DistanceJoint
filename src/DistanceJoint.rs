@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use bevy::reflect::erased_serde::__private::serde;
 use crate::query::*;
 use crate::rotation::*;
 

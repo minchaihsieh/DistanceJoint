@@ -2,7 +2,7 @@
 mod debug;
 mod cuboid;
 mod camera;
-mod XPDB;
+mod XPBD;
 mod components;
 mod resource;
 mod entity;
@@ -11,15 +11,12 @@ mod rotation;
 mod query;
 mod utils;
 
-use std::f32::consts::PI;
 use bevy::prelude::*;
 use crate::camera::CameraPlugin;
 use crate::cuboid::CuboidPlugin;
-use crate::resource::*;
-use crate::XPDB::XPDBPlugin;
+use crate::XPBD::XPBDPlugin;
 use bevy::diagnostic::LogDiagnosticsPlugin;
 use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
-use bevy::math::quat;
 
 fn main() {
     App::new()
@@ -36,7 +33,7 @@ fn main() {
         //.add_plugins(DebugPlugin)
         .add_plugins(CameraPlugin)
         .add_plugins(CuboidPlugin)
-        .add_plugins(XPDBPlugin)
+        .add_plugins(XPBDPlugin)
         //.insert_resource(Gravity(Vec3::ZERO))
         .run();
 }

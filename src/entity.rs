@@ -3,7 +3,6 @@ use bevy::prelude::*;
 use crate::components::*;
 use crate::rotation::{PreviousRotation, Rotation};
 
-pub const DELTA_TIME: f32 = 1. / 60.;
 
 #[derive(Bundle, Default)]
 pub struct ParticleBundle {
@@ -35,14 +34,14 @@ impl ParticleBundle {
         //let delta_time = time.delta_seconds_adjusted();
         Self {
             pos: Position(pos),
-            prev_pos: PreviousPosition(pos - vel * DELTA_TIME),
+            prev_pos: PreviousPosition(pos),
             lin_vel: LinearVelocity(vel),
             mass: Mass(mass),
             inverse_mass:  InverseMass(if rigid_body == RigidBody::Dynamic {1. / mass} else { 0.0}) ,
-            inertia: Inertia(Mat3::from_cols(Vec3::new(1.0 / 3.0, 0.0, 0.0), Vec3::new(0.0,1.0 / 3.0, 0.0), Vec3::new(0.0,0.0,1.0 / 3.0))),
-            inverse_inertia: InverseInertia(Mat3::from_cols(Vec3::new(3.0, 0.0, 0.0), Vec3::new(0.0 , 3.0, 0.0), Vec3::new(0.0, 0.0, 3.0))),
+            inertia: Inertia::new(pos, mass),
+            inverse_inertia: InverseInertia::new(pos, mass),
             rigid_body,
-            center_of_mass: CenterOfMass(pos),
+            center_of_mass: CenterOfMass(Vec3::new(0.0, 0.0, 0.0)),
             ..Default::default()
         }
     }
