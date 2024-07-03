@@ -48,6 +48,7 @@ pub enum Step {
     SolvePositions,
     UpdateVelocities,
     SolveVelocities,
+    ApplyTranslation,
 }
 
 // #[derive(Component)]

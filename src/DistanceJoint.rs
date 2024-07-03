@@ -95,7 +95,7 @@ impl DistanceJoint {
     pub fn damping_angular(&self) -> f32 {
         self.damping_angular
     }
-    fn clear_lagrange_multipliers(&mut self) {
+    pub fn clear_lagrange_multipliers(&mut self) {
         self.lagrange = 0.0;
     }
 

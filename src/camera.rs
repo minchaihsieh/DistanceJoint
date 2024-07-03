@@ -1,7 +1,5 @@
 use bevy::prelude::*;
-use bevy::ui::AlignSelf::Start;
 
-const CAMERA_DISTANCE: f32 = 80.0;
 pub struct CameraPlugin;
 
 impl Plugin for CameraPlugin {

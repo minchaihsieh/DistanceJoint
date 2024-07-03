@@ -72,12 +72,12 @@ impl Default for Mass {
     }
 }
 
-// 用来模拟不动的物体
 #[derive(Reflect, Clone, Copy, Component, Debug, Default, Deref, DerefMut, PartialEq)]
 pub struct InverseMass(pub f32);
 
 impl InverseMass {
     pub const ZERO: Self = Self(0.0);
+
 }
 
 #[derive(Reflect, Clone, Copy, Component, Debug, Deref, DerefMut, PartialEq)]
@@ -169,6 +169,8 @@ pub struct CenterOfMass(pub Vec3);
 impl CenterOfMass {
     /// A center of mass set at the local origin.
     pub const ZERO: Self = Self(Vec3::ZERO);
+
+    pub fn new(center_of_mass: Vec3) -> Self { Self(center_of_mass) }
 }
 
 #[rustfmt::skip]
